@@ -9,6 +9,19 @@ export default function Home() {
 
   const db = useSQLiteContext();
 
+  React.useEffect(() => {
+    db.withTransactionAsync(async () => {
+      await getData();
+    });
+  }, [db]);
+
+  async function getData() {
+    const result = await db.getAllAsync<Transaction>(
+      `SELECT 8 FROM Transactions ORDER BY date DESC;`
+    );
+    setTransactions(result);
+  }
+
   return (
     <View>
       <Text>Home Screen</Text>
