@@ -17,7 +17,7 @@ export default function Home() {
 
   async function getData() {
     const result = await db.getAllAsync<Transaction>(
-      `SELECT 8 FROM Transactions ORDER BY date DESC;`
+      `SELECT * FROM Transactions ORDER BY date DESC;`
     );
     setTransactions(result);
   }
