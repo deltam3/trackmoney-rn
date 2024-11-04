@@ -12,8 +12,3 @@ export interface Category {
   name: string;
   type: "Expense" | "Income";
 }
-
-export interface TransactionsByMonth {
-  totalExpenses: number;
-  totalIncome: number;
-}

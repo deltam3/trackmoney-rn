@@ -1,32 +1,15 @@
 import * as React from "react";
-import { StatusBar } from "expo-status-bar";
 import { ActivityIndicator, Platform, Text, View } from "react-native";
-
-import * as FileSystem from "expo-file-system";
-import { Asset } from "expo-asset";
-
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { NavigationContainer } from "@react-navigation/native";
 
 const Stack = createNativeStackNavigator();
 
-import { SQLiteProvider } from "expo-sqlite/next";
+import { SQLiteProvider, openDatabaseAsync } from "expo-sqlite";
 import Home from "./screens/Home";
 
 const loadDatabase = async () => {
-  const dbName = "mySQLiteDB.db";
-  const dbAsset = require("./assets/mySQLiteDB.db");
-  const dbUri = Asset.fromModule(dbAsset).uri;
-  const dbFilePath = `${FileSystem.documentDirectory}SQLite/${dbName}`;
-
-  const fileInfo = await FileSystem.getInfoAsync(dbFilePath);
-  if (!fileInfo.exists) {
-    await FileSystem.makeDirectoryAsync(
-      `${FileSystem.documentDirectory}SQLite`,
-      { intermediates: true }
-    );
-    await FileSystem.downloadAsync(dbUri, dbFilePath);
-  }
+  const db = await openDatabaseAsync("mySqLiteDb.db");
 };
 
 export default function App() {
@@ -38,13 +21,6 @@ export default function App() {
       .catch((e) => console.error(e));
   }, []);
 
-  if (!dbLoaded)
-    return (
-      <View style={{ flex: 1 }}>
-        <ActivityIndicator size={"large"} />
-        <Text>데이터베이스 로딩중...</Text>
-      </View>
-    );
   return (
     <NavigationContainer>
       <React.Suspense
@@ -55,7 +31,11 @@ export default function App() {
           </View>
         }
       >
-        <SQLiteProvider databaseName="mySQLiteDB.db" useSuspense>
+        <SQLiteProvider
+          databaseName="mySQLiteDB.db"
+          assetSource={{ assetId: require("./assets/mySQLiteDB.db") }}
+          useSuspense
+        >
           <Stack.Navigator>
             <Stack.Screen
               name="Home"
