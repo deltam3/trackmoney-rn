@@ -1,16 +1,29 @@
 import * as React from "react";
-import { Platform, ScrollView, Text, View } from "react-native";
-import { Category, Transaction } from "../types";
+import { Platform, ScrollView, Text, StyleSheet } from "react-native";
+import { Category, Transaction, TransactionsByMonth } from "../types";
 import { useSQLiteContext } from "expo-sqlite";
 import TransactionsList from "../components/TransactionsList";
+import Card from "../components/ui/Card";
+import AddTransaction from "../components/AddTransaction";
+
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+
+type StackParamList = {
+  Payment: undefined;
+};
 
 export default function Home() {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<StackParamList, "Payment">>();
   const [categories, setCategories] = React.useState<Category[]>([]);
   const [transactions, setTransactions] = React.useState<Transaction[]>([]);
-
+  const [transactionsByMonth, setTransactionsByMonth] =
+    React.useState<TransactionsByMonth>({
+      totalExpenses: 0,
+      totalIncome: 0,
+    });
   const db = useSQLiteContext();
-
-  console.log(db);
 
   React.useEffect(() => {
     db.withTransactionAsync(async () => {
@@ -30,6 +43,29 @@ export default function Home() {
       `SELECT * FROM Categories;`
     );
     setCategories(categoriesResult);
+
+    const now = new Date();
+
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    endOfMonth.setMilliseconds(endOfMonth.getMilliseconds() - 1);
+
+    const startOfMonthTimestamp = Math.floor(startOfMonth.getTime() / 1000);
+    const endOfMonthTimestamp = Math.floor(endOfMonth.getTime() / 1000);
+
+    const transactionsByMonth = await db.getAllAsync<TransactionsByMonth>(
+      `
+      SELECT
+        COALESCE(SUM(CASE WHEN type = 'Expense' THEN amount ELSE 0 END), 0) AS totalExpenses,
+        COALESCE(SUM(CASE WHEN type = 'Income' THEN amount ELSE 0 END), 0) AS totalIncome
+      FROM Transactions
+      WHERE date >= ? AND date <= ?;
+      `,
+      [startOfMonth.toISOString(), endOfMonth.toISOString()]
+    );
+
+    setTransactionsByMonth(transactionsByMonth[0]);
   }
 
   async function deleteTransaction(id: number) {
@@ -39,7 +75,23 @@ export default function Home() {
     });
   }
 
-  console.log(transactions);
+  async function insertTransaction(transaction: Transaction) {
+    db.withTransactionAsync(async () => {
+      await db.runAsync(
+        `
+        INSERT INTO Transactions (category_id, amount, date, description, type) VALUES (?, ?, ?, ?, ?);
+      `,
+        [
+          transaction.category_id,
+          transaction.amount,
+          transaction.date,
+          transaction.description,
+          transaction.type,
+        ]
+      );
+      await getData();
+    });
+  }
 
   return (
     <>
@@ -49,6 +101,11 @@ export default function Home() {
           paddingVertical: Platform.OS === "ios" ? 170 : 16,
         }}
       >
+        <AddTransaction insertTransaction={insertTransaction} />
+        <TransactionSummary
+          totalExpenses={transactionsByMonth.totalExpenses}
+          totalIncome={transactionsByMonth.totalIncome}
+        />
         <TransactionsList
           categories={categories}
           transactions={transactions}
@@ -64,44 +121,38 @@ function TransactionSummary({
   totalExpenses,
 }: TransactionsByMonth) {
   const savings = totalIncome - totalExpenses;
-  const readablePeriod = new Date().toLocaleDateString("default", {
-    month: "long",
+
+  const readablePeriod = new Date().toLocaleDateString("ko-KR", {
+    month: "numeric",
     year: "numeric",
   });
 
-  // Function to determine the style based on the value (positive or negative)
-  const getMoneyTextStyle = (value: number): TextStyle => ({
+  const getMoneyTextStyle = (value: number): any => ({
     fontWeight: "bold",
-    color: value < 0 ? "#ff4500" : "#2e8b57", // Red for negative, custom green for positive
+    color: value < 0 ? "#ff4500" : "#2e8b57",
   });
-
-  // Helper function to format monetary values
-  const formatMoney = (value: number) => {
-    const absValue = Math.abs(value).toFixed(2);
-    return `${value < 0 ? "-" : ""}$${absValue}`;
-  };
 
   return (
     <>
       <Card style={styles.container}>
-        {/* <Text style={styles.periodTitle}>Summary for {readablePeriod}</Text> */}
-        <SummaryChart />
-        {/* <Text style={styles.summaryText}>
-          Income:{" "}
+        <Text style={styles.periodTitle}>
+          {readablePeriod.split(".")[0]}년{readablePeriod.split(".")[1]}월 요약
+        </Text>
+        <Text style={styles.summaryText}>
+          수입:{" "}
           <Text style={getMoneyTextStyle(totalIncome)}>
-            {formatMoney(totalIncome)}
+            {`₩${totalIncome}`}
           </Text>
         </Text>
         <Text style={styles.summaryText}>
-          Total Expenses:{" "}
+          총 지출:{" "}
           <Text style={getMoneyTextStyle(totalExpenses)}>
-            {formatMoney(totalExpenses)}
+            {`₩${totalExpenses}`}
           </Text>
         </Text>
         <Text style={styles.summaryText}>
-          Savings:{" "}
-          <Text style={getMoneyTextStyle(savings)}>{formatMoney(savings)}</Text>
-        </Text> */}
+          저축: <Text style={getMoneyTextStyle(savings)}>{`₩${savings}`}</Text>
+        </Text>
       </Card>
     </>
   );
@@ -132,5 +183,4 @@ const styles = StyleSheet.create({
     color: "#333",
     marginBottom: 10,
   },
-  // Removed moneyText style since we're now generating it dynamically
 });

@@ -1,4 +1,4 @@
-import { Text, TouchableOpacity, View } from "react-native";
+import { FlatList, View, Text, TouchableOpacity } from "react-native";
 import { Category, Transaction } from "../types";
 import TransactionListItem from "./TransactionListItem";
 
@@ -11,26 +11,34 @@ export default function TransactionsList({
   transactions: Transaction[];
   deleteTransaction: (id: number) => Promise<void>;
 }) {
+  const renderItem = ({ item }: { item: Transaction }) => {
+    const categoryForCurrentItem = categories.find(
+      (category) => category.id === item.category_id
+    );
+
+    return (
+      <TouchableOpacity
+        key={item.id}
+        activeOpacity={0.7}
+        onLongPress={() => deleteTransaction(item.id)}
+      >
+        <TransactionListItem
+          transaction={item}
+          categoryInfo={categoryForCurrentItem}
+        />
+      </TouchableOpacity>
+    );
+  };
+
   return (
-    <View style={{ gap: 15 }}>
-      {transactions.map((transaction) => {
-        const categoryForCurrentItem = categories.find(
-          (category) => category.id === transaction.category_id
-        );
-        console.log(transactions);
-        return (
-          <TouchableOpacity
-            key={transaction.id}
-            activeOpacity={0.7}
-            onLongPress={() => deleteTransaction(transaction.id)}
-          >
-            <TransactionListItem
-              transaction={transaction}
-              categoryInfo={categoryForCurrentItem}
-            />
-          </TouchableOpacity>
-        );
-      })}
+    <View style={{ flex: 1 }}>
+      <FlatList
+        data={transactions}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={renderItem}
+        contentContainerStyle={{ padding: 0 }}
+        ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
+      />
     </View>
   );
 }

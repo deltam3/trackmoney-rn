@@ -21,8 +21,10 @@ export default function TransactionListItem({
   const iconName =
     transaction.type === "Expense" ? "minuscircle" : "pluscircle";
   const color = transaction.type === "Expense" ? "red" : "green";
+  console.log(categoryInfo?.name);
   const categoryColor = categoryColors[categoryInfo?.name ?? "Default"];
   const emoji = categoryEmojies[categoryInfo?.name ?? "Default"];
+
   return (
     <Card>
       <View style={styles.row}>
@@ -54,16 +56,19 @@ function TransactionInfo({
   description,
 }: {
   id: number;
-  date: number;
+  date: string;
   description: string;
 }) {
+  const formattedDate = new Date(date).toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
   return (
     <View style={{ flexGrow: 1, gap: 6, flexShrink: 1 }}>
       <Text style={{ fontSize: 16, fontWeight: "bold" }}>{description}</Text>
       <Text> 거래 고유번호: {id}</Text>
-      <Text style={{ fontSize: 12, color: "gray" }}>
-        {new Date(date).toDateString()}
-      </Text>
+      <Text style={{ fontSize: 12, color: "gray" }}>{formattedDate}</Text>
     </View>
   );
 }
