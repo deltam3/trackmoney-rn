@@ -13,7 +13,8 @@ SQLite를 이용해 Persistent Storage를 구현.
 
 ## 🐤 Demo
 
-<img src="demo.GIF>
+<!-- <img src="demo.GIF> -->
+<img src="./demo.GIF" width="128"/>
 
 ## ⭐ Main Feature
 
