@@ -13,6 +13,8 @@ SQLite를 이용해 Persistent Storage를 구현.
 
 ## 🐤 Demo
 
+<img src="demo.GIF>
+
 ## ⭐ Main Feature
 
 - SQLite 사용법: 데이터베이스에 쿼리를 보내고 받는 기능 구현.
@@ -39,3 +41,4 @@ SQLite를 이용해 Persistent Storage를 구현.
 | :----------------------------------------------------------------------------------------:
 | <img src="https://avatars.githubusercontent.com/u/149219075?v=4" width=400px alt="delta"/> |
 | [delta](https://github.com/deltam3) |
+d
